@@ -58,12 +58,6 @@ case "$1" in
         echo "  config         - Altera as configurações de monitoramento"
         echo "  set-interface  - Define manualmente a interface Wi-Fi a ser usada"
         echo "  help           - Exibe esta mensagem de ajuda"
-        echo ""
-        echo "Variáveis de configuração:"
-        echo "  MAX_LOSS   - Número máximo de pacotes perdidos para considerar a conexão ruim"
-        echo "  TARGETS    - Endereços-alvo para os testes de ping"
-        echo "  INTERVAL   - Intervalo entre os testes de ping (em segundos)"
-        echo "  PING_COUNT - Número de pacotes a serem enviados em cada teste de ping"
         ;;
     *)
         echo "Uso: netmon help para ver os comandos disponíveis"
