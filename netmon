@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CONFIG_FILE="/etc/netmon.conf"
+
 case "$1" in
     activate)
         sudo systemctl start netmon.service
@@ -9,7 +11,7 @@ case "$1" in
         ;;
     status)
         if systemctl is-active --quiet netmon.service; then
-            echo "Net Monito \033[32mativo\033[0m"
+            echo "Net Monitor \033[32mativo\033[0m"
         else
             echo "Net Monitor \033[31minativo\033[0m"
         fi
@@ -17,13 +19,51 @@ case "$1" in
     analyze)
         python3 /usr/local/share/netmon/analyzer.py
         ;;
+    config)
+        echo "Configuração do Net Monitor"
+        echo "--------------------------"
+        echo "Digite o novo valor para MAX_LOSS (atual: $(grep MAX_LOSS "$CONFIG_FILE" | cut -d= -f2)):"
+        read -r NEW_MAX_LOSS
+        echo "Digite os novos endereços-alvo separados por espaço (atual: $(grep TARGETS "$CONFIG_FILE" | cut -d= -f2)):"
+        read -r NEW_TARGETS
+        echo "Digite o novo valor para INTERVAL (atual: $(grep INTERVAL "$CONFIG_FILE" | cut -d= -f2)):"
+        read -r NEW_INTERVAL
+        echo "Digite o novo valor para PING_COUNT (atual: $(grep PING_COUNT "$CONFIG_FILE" | cut -d= -f2)):"
+        read -r NEW_PING_COUNT
+
+        # Escrevendo no arquivo de configuração
+        echo "MAX_LOSS=$NEW_MAX_LOSS" | sudo tee "$CONFIG_FILE" > /dev/null
+        echo "TARGETS=($NEW_TARGETS)" | sudo tee -a "$CONFIG_FILE" > /dev/null
+        echo "INTERVAL=$NEW_INTERVAL" | sudo tee -a "$CONFIG_FILE" > /dev/null
+        echo "PING_COUNT=$NEW_PING_COUNT" | sudo tee -a "$CONFIG_FILE" > /dev/null
+        
+        echo "Configuração salva! Reinicie o serviço com 'netmon activate' para aplicar as mudanças."
+        ;;
+    set-interface)
+        if [[ -z "$2" ]]; then
+            echo "Erro: Nenhuma interface foi especificada!"
+            echo "Uso: netmon set-interface <nome_da_interface>"
+            exit 1
+        fi
+
+        echo "IFACE=$2" | sudo tee -a "$CONFIG_FILE" > /dev/null
+        echo "Interface Wi-Fi configurada manualmente para '$2'. Reinicie o serviço com 'netmon activate' para aplicar as mudanças."
+        ;;
     help)
-        echo "Uso: netmon {activate|deactivate|status|analyze|help}"
-        echo "  activate   - Inicia o serviço de monitoramento"
-        echo "  deactivate - Para o serviço de monitoramento"
-        echo "  status     - Verifica se o serviço está rodando"
-        echo "  analyze    - Executa a análise do log com Python"
-        echo "  help       - Exibe esta mensagem de ajuda"
+        echo "Uso: netmon {activate|deactivate|status|analyze|config|set-interface|help}"
+        echo "  activate       - Inicia o serviço de monitoramento"
+        echo "  deactivate     - Para o serviço de monitoramento"
+        echo "  status         - Verifica se o serviço está rodando"
+        echo "  analyze        - Executa a análise do log com Python"
+        echo "  config         - Altera as configurações de monitoramento"
+        echo "  set-interface  - Define manualmente a interface Wi-Fi a ser usada"
+        echo "  help           - Exibe esta mensagem de ajuda"
+        echo ""
+        echo "Variáveis de configuração:"
+        echo "  MAX_LOSS   - Número máximo de pacotes perdidos para considerar a conexão ruim"
+        echo "  TARGETS    - Endereços-alvo para os testes de ping"
+        echo "  INTERVAL   - Intervalo entre os testes de ping (em segundos)"
+        echo "  PING_COUNT - Número de pacotes a serem enviados em cada teste de ping"
         ;;
     *)
         echo "Uso: netmon help para ver os comandos disponíveis"

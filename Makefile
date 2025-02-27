@@ -1,45 +1,26 @@
-PREFIX=/usr/local/bin
-SERVICE_DIR=/etc/systemd/system
-PYTHON_ENV=/usr/local/share/netmon/env
-
-help:
-	@echo "Makefile para instalar o NetMon"
-	@echo "Comandos disponíveis:"
-	@echo "  make install     - Instala o serviço e dependências"
-	@echo "  make uninstall   - Remove o serviço e arquivos do projeto"
-	@echo "  make help        - Exibe esta mensagem de ajuda"
-
 install:
 	@echo "Instalando dependências Python..."
 	pip install --upgrade pip
 	pip install pandas numpy matplotlib InquirerPy
 	
-	@echo "Instalando o comando netmon..."
+	@echo "Copiando scripts..."
 	mkdir -p /usr/local/share/netmon
 	cp netmon.sh analyzer.py /usr/local/share/netmon/
 	chmod +x /usr/local/share/netmon/netmon.sh
-	cp netmon $(PREFIX)/
-	chmod +x $(PREFIX)/netmon
+
+	@echo "Instalando o comando netmon..."
+	cp netmon /usr/local/bin/
+	chmod +x /usr/local/bin/netmon
+
+	@echo "Criando arquivo de configuração..."
+	if [ ! -f /etc/netmon.conf ]; then \
+	    echo "MAX_LOSS=60" | sudo tee /etc/netmon.conf > /dev/null; \
+	    echo 'TARGETS=("8.8.8.8" "8.8.4.4" "1.1.1.1" "1.0.0.1")' | sudo tee -a /etc/netmon.conf > /dev/null; \
+	fi
 
 	@echo "Instalando serviço systemd..."
-	cp netmon.service $(SERVICE_DIR)/
+	cp netmon.service /etc/systemd/system/
 	systemctl daemon-reload
 	systemctl enable netmon.service
 
 	@echo "Instalação concluída! Use 'netmon help' para ver os comandos disponíveis."
-
-uninstall:
-	@echo "Desinstalando netmon..."
-	rm -f $(PREFIX)/netmon
-	
-	@echo "Removendo arquivos do projeto..."
-	rm -rf /usr/local/share/netmon
-	
-	@echo "Removendo serviço systemd..."
-	systemctl disable netmon.service
-	rm -f $(SERVICE_DIR)/netmon.service
-	systemctl daemon-reload
-	
-	@echo "Desinstalação concluída!"
-
-.PHONY: install uninstall help
