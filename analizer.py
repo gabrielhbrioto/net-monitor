@@ -8,6 +8,7 @@ import os
 
 # Inicializa o DataFrame vazio
 df = pd.DataFrame()  
+analyze_by_network = ""
 
 # Rótulos das colunas
 labels = {
@@ -50,7 +51,6 @@ def extract_data():
     """
 
     global df
-    df = pd.DataFrame() # Inicializa como um DataFrame vazio
 
     # Caminho do arquivo de log
     log_file_path = "/var/log/netmon/netmon.log"
@@ -128,178 +128,154 @@ def extract_data():
         return pd.DataFrame()
 
 def stats():
-    """Exibe estatísticas descritivas do data frame.
-    """
+    """Exibe estatísticas descritivas do data frame."""
 
-    print("Caracterização do data frame:")
-    print(df.describe())
+    global df
+    if analyze_by_network == "Análise geral (todas as redes)":
+        print("Caracterização geral dos dados:")
+        print(df.describe())
+
+    else:
+        for ssid, group in df.groupby("network"):
+            print(f"Estatísticas da rede: {ssid}")
+            print(group.describe())
 
 def corr_rtt_signal():
     """Gera gráficos de dispersão e calcula a correlação entre Signal e cada métrica de RTT."""
 
     global df
+    if analyze_by_network == "Análise geral (todas as redes)":
+        dataset = {"Geral": df}  # Criamos um dicionário para facilitar a iteração
+    else:
+        dataset = {ssid: group for ssid, group in df.groupby("network")}
 
-    # Gráfico de dispersão entre Signal e cada métrica de RTT
-    for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev']:
-        plt.figure(figsize=(8, 6))
-        plt.scatter(df["signal"], df[column], alpha=0.7, edgecolor="k")
-        plt.title(f"Relação entre Signal (%) e {labels[column]}", fontsize=16)
-        plt.xlabel("Signal (%)", fontsize=12)
-        plt.ylabel(f"{labels[column]}", fontsize=12)
-        plt.grid(True)
-        plt.show()
+    for name, group in dataset.items():
+        print(f"Rede: {name}")
 
-        # Coeficiente de correlação entre Signal e cada métrica de RTT
-        correlation_results = {}
         for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev']:
-            correlation = df["signal"].corr(df[column])  # Correlação de Pearson
-            correlation_results[column] = correlation
+            plt.figure(figsize=(8, 6))
+            plt.scatter(group["signal"], group[column], alpha=0.7, edgecolor="k")
+            plt.title(f"{name} - Relação entre Sinal (%) e {labels[column]}", fontsize=16)
+            plt.xlabel("Signal (%)", fontsize=12)
+            plt.ylabel(f"{labels[column]}", fontsize=12)
+            plt.grid(True)
+            plt.show()
 
-        # Exibir resultados de correlação
-        print("Coeficientes de Correlação entre Signal e Métricas de RTT:")
-        for column, corr in correlation_results.items():
-            corr_type = ""
-            corr_strengh = ""
-
-            corr_type = "positiva" if corr > 0 else "negativa"
-
-            # Classifica a força da correlação
-            if abs(corr) >= 0.7:
-                corr_strengh = "muito forte"
-            elif abs(corr) >= 0.5:
-                corr_strengh = "moderada"
-            elif abs(corr) >= 0.3:
-                corr_strengh = "fraca"
-            else:
-                corr_strengh = "muito fraca"
-
-            print(f"Signal vs {labels[column]}: {corr:.4f} (correlação {corr_type} {corr_strengh})")
+            # Coeficiente de correlação
+            correlation = group["signal"].corr(group[column])
+            print(f"Correlação entre Sinal e {labels[column]} ({name}): {correlation:.4f}")
 
 def rtt_per_hour():
     """Gera um gráfico de linha da média de RTT por hora do dia."""
 
     global df
-
-    # Extrair a hora do dia
     df["hour"] = df["timestamp"].dt.hour
 
-    # Agrupar por hora e calcular a média de RTT
-    hourly_rtt = df.groupby("hour")["rtt_med"].mean()
+    if analyze_by_network == "Análise geral (todas as redes)":
+        dataset = {"Geral": df}
+    else:
+        dataset = {ssid: group for ssid, group in df.groupby("network")}
 
-    print("Média de RTT por Hora do Dia:")
-    print(hourly_rtt) 
+    for name, group in dataset.items():
+        print(f"Rede: {name}")
 
-    # Plotar o gráfico de latência média por hora
-    plt.figure(figsize=(10, 6))
-    hourly_rtt.plot(kind="line", marker="o", title="Média de RTT por Hora do Dia")
-    plt.xlabel("Hora do Dia")
-    plt.ylabel("Média de RTT (ms)")
-    plt.grid(True)
-    plt.show()
+        hourly_rtt = group.groupby("hour")["rtt_med"].mean()
+        print(hourly_rtt)
+
+        plt.figure(figsize=(10, 6))
+        hourly_rtt.plot(kind="line", marker="o", title=f"{name} - Média de RTT por Hora do Dia")
+        plt.xlabel("Hora do Dia")
+        plt.ylabel("Média de RTT (ms)")
+        plt.grid(True)
+        plt.show()
 
 def connection_quality():
     """Classifica a qualidade da conexão baseado nos valores médios de RTT, sinal e perda de pacotes."""
     global df
 
-    if df.empty:
-        print("Nenhum dado disponível. Extraia os dados primeiro.")
-        return
-
-    avg_rtt = df["rtt_med"].mean()
-    avg_signal = df["signal"].mean()
-    avg_loss = df["packet_loss"].mean()
-
-    # Avaliação baseada em RTT
-    if avg_rtt < 50:
-        rtt_quality = "Ótima"
-    elif avg_rtt < 100:
-        rtt_quality = "Boa"
-    elif avg_rtt < 200:
-        rtt_quality = "Razoável"
+    if analyze_by_network == "Análise geral (todas as redes)":
+        dataset = {"Geral": df}
     else:
-        rtt_quality = "Ruim"
+        dataset = {ssid: group for ssid, group in df.groupby("network")}
 
-    # Avaliação baseada no Sinal (%)
-    if avg_signal > 70:
-        signal_quality = "Ótimo"
-    elif avg_signal > 50:
-        signal_quality = "Bom"
-    elif avg_signal > 30:
-        signal_quality = "Fraco"
-    else:
-        signal_quality = "Muito Fraco"
+    for name, group in dataset.items():
+        print(f"Rede: {name}")
 
-    # Avaliação baseada na Perda de Pacotes (%)
-    if avg_loss < 2:
-        loss_quality = "Baixa"
-    elif avg_loss < 5:
-        loss_quality = "Moderada"
-    else:
-        loss_quality = "Alta"
+        avg_rtt = group["rtt_med"].mean()
+        avg_signal = group["signal"].mean()
+        avg_loss = group["packet_loss"].mean()
 
-    print("**Classificação da Qualidade da Conexão**")
-    print(f"RTT Médio: {avg_rtt:.2f} ms ({rtt_quality})")
-    print(f"Sinal Médio: {avg_signal:.2f}% ({signal_quality})")
-    print(f"Perda de Pacotes Média: {avg_loss:.2f}% ({loss_quality})")
-
-    # Mensagem geral sobre a conexão
-    if avg_rtt < 100 and avg_signal > 50 and avg_loss < 2:
-        print("Sua conexão está estável e com boa qualidade!")
-    elif avg_rtt > 200 or avg_signal < 30 or avg_loss > 5:
-        print("Sua conexão apresenta problemas! Verifique a rede Wi-Fi ou o provedor de internet.")
-    else:
-        print("Sua conexão está aceitável, mas pode apresentar instabilidades em determinados momentos.")
+        print(f"RTT Médio: {avg_rtt:.2f} ms")
+        print(f"Sinal Médio: {avg_signal:.2f}%")
+        print(f"Perda de Pacotes Média: {avg_loss:.2f}%")
 
 def peak_instability_periods():
     """Identifica os horários do dia onde ocorrem os maiores RTTs médios e maior perda de pacotes."""
     global df
 
-    if df.empty:
-        print("Nenhum dado disponível. Extraia os dados primeiro.")
-        return
-
     df["hour"] = df["timestamp"].dt.hour  # Extrai a hora do timestamp
-    high_rtt_hours = df.groupby("hour")["rtt_med"].mean().idxmax()
-    high_loss_hours = df.groupby("hour")["packet_loss"].mean().idxmax()
 
-    print("**Horários Críticos da Conexão**")
-    print(f"Maior RTT médio ocorre por volta das {high_rtt_hours}:00")
-    print(f"Maior perda de pacotes ocorre por volta das {high_loss_hours}:00")
-
-    if high_rtt_hours == high_loss_hours:
-        print(f"A maior instabilidade ocorre no horário das {high_rtt_hours}:00. Considere evitar esse período para atividades críticas.")
+    if analyze_by_network == "Análise geral (todas as redes)":
+        dataset = {"Geral": df}
     else:
-        print("A instabilidade pode variar ao longo do dia. Consulte os horários identificados para planejar melhor o uso da rede.")
+        dataset = {ssid: group for ssid, group in df.groupby("network")}
+
+    for name, group in dataset.items():
+        high_rtt_hour = group.groupby("hour")["rtt_med"].mean().idxmax()
+        high_loss_hour = group.groupby("hour")["packet_loss"].mean().idxmax()
+
+        print(f"Rede: {name}")
+        print(f"Maior RTT médio ocorre por volta das {high_rtt_hour}:00")
+        print(f"Maior perda de pacotes ocorre por volta das {high_loss_hour}:00")
+
+        if high_rtt_hour == high_loss_hour:
+            print(f"A maior instabilidade ocorre no horário das {high_rtt_hour}:00.")
+        else:
+            print("A instabilidade pode variar ao longo do dia.")
 
 def recovery_time():
     """Analisa o tempo médio necessário para a rede se recuperar após uma falha (alta perda de pacotes)."""
     global df
 
-    if df.empty:
-        print("Nenhum dado disponível. Extraia os dados primeiro.")
-        return
+    threshold = 20  # Limite de perda de pacotes considerada alta
 
-    threshold = int(input("Digite em % a perda de pacotes que considera uma falha na rede: "))
-    df["prev_loss"] = df["packet_loss"].shift(1)  # Adiciona uma coluna para comparar com a anterior
-    recovery_times = []
-
-    for i in range(1, len(df)):
-        if df.iloc[i - 1]["prev_loss"] >= threshold and df.iloc[i]["packet_loss"] < threshold:
-            recovery_time = (df.iloc[i]["timestamp"] - df.iloc[i - 1]["timestamp"]).total_seconds()
-            recovery_times.append(recovery_time)
-
-    if recovery_times:
-        avg_recovery_time = sum(recovery_times) / len(recovery_times)
-        print(f"Tempo médio para recuperação da rede após falha: {avg_recovery_time:.2f} segundos.")
+    if analyze_by_network == "Análise geral (todas as redes)":
+        dataset = {"Geral": df}
     else:
-        print("Nenhuma falha detectada no intervalo analisado.")
+        dataset = {ssid: group for ssid, group in df.groupby("network")}
+
+    for name, group in dataset.items():
+        group["prev_loss"] = group["packet_loss"].shift(1)  # Adiciona uma coluna para comparar com a anterior
+        recovery_times = []
+
+        for i in range(1, len(group)):
+            if group.iloc[i - 1]["prev_loss"] >= threshold and group.iloc[i]["packet_loss"] < threshold:
+                recovery_time = (group.iloc[i]["timestamp"] - group.iloc[i - 1]["timestamp"]).total_seconds()
+                recovery_times.append(recovery_time)
+
+        if recovery_times:
+            avg_recovery_time = sum(recovery_times) / len(recovery_times)
+            print(f"Rede: {name}")
+            print(f"Tempo médio para recuperação após falha: {avg_recovery_time:.2f} segundos.")
+        else:
+            print(f"Rede: {name} | Nenhuma falha detectada no intervalo analisado.")
 
 def menu():
-    """Exibe um menu principal para o usuário escolher as opções disponíveis.
-    """
+    """Exibe um menu principal para o usuário escolher as opções disponíveis."""
 
     global df
-    options = ["Extrair dados do log", "Exibir dados", "Correlação entre RTT e Sinal", "RTT por hora do dia", "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Sair"]
+    global analyze_by_network
+
+    # Pergunta ao usuário se deseja analisar todas as redes juntas ou separadamente
+    analyze_by_network = inquirer.select(
+        message="Como deseja realizar a análise?",
+        choices=["Análise geral (todas as redes)", "Análise separada por rede"],
+    ).execute()
+
+    options = ["Extrair dados do log", "Exibir dados", "Correlação entre RTT e Sinal", "RTT por hora do dia", 
+               "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", 
+               "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Sair"]
+
     choice = inquirer.select(
         message="Escolha uma opção:",
         choices=options,
@@ -324,13 +300,13 @@ def menu():
         if df.empty:
             print("Nenhum dado disponível. Extraia os dados primeiro.")
         else:
-            corr_rtt_signal("show")
+            corr_rtt_signal()
 
     elif choice == "RTT por hora do dia":
         if df.empty:
             print("Nenhum dado disponível. Extraia os dados primeiro.")
         else:
-            rtt_per_hour("show")
+            rtt_per_hour()
             
     elif choice == "Classificação da Qualidade da Conexão":
         if df.empty:
@@ -359,6 +335,10 @@ def menu():
     elif choice == "Sair":
         print("Saindo do programa...")
         os._exit(0)
+
+while True:
+    menu()
+
 
 while True:
     menu()
