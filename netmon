@@ -1,0 +1,32 @@
+#!/bin/bash
+
+case "$1" in
+    activate)
+        sudo systemctl start netmon.service
+        ;;
+    deactivate)
+        sudo systemctl stop netmon.service
+        ;;
+    status)
+        if systemctl is-active --quiet netmon.service; then
+            echo "Net Monito \033[32mativo\033[0m"
+        else
+            echo "Net Monitor \033[31minativo\033[0m"
+        fi
+        ;;
+    analyze)
+        python3 /usr/local/share/netmon/analyzer.py
+        ;;
+    help)
+        echo "Uso: netmon {activate|deactivate|status|analyze|help}"
+        echo "  activate   - Inicia o serviço de monitoramento"
+        echo "  deactivate - Para o serviço de monitoramento"
+        echo "  status     - Verifica se o serviço está rodando"
+        echo "  analyze    - Executa a análise do log com Python"
+        echo "  help       - Exibe esta mensagem de ajuda"
+        ;;
+    *)
+        echo "Uso: netmon help para ver os comandos disponíveis"
+        exit 1
+        ;;
+esac

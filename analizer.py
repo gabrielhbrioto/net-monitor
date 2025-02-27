@@ -49,7 +49,7 @@ def export_to_csv():
         print(f"Erro ao exportar os dados: {e}")
 
 def extract_data():
-    """Extrai os dados do arquivo de log wlan_watch.log e retorna um DataFrame com os dados extraídos.
+    """Extrai os dados do arquivo de log netmon.log e retorna um DataFrame com os dados extraídos.
 
     Returns:
         DataFrame: Dataframe com os dados extraídos do arquivo de log.
@@ -59,7 +59,7 @@ def extract_data():
     df = pd.DataFrame() # Inicializa como um DataFrame vazio
 
     # Caminho do arquivo de log
-    log_file_path = "/var/log/wlan_watch/wlan_watch.log"
+    log_file_path = "/var/log/netmon/netmon.log"
 
     # Solicitar ao usuário o intervalo de tempo
     start_time = input("Digite o horário de início (YYYY-MM-DD HH:MM:SS) ou deixe em branco para o mais antigo: ").strip()

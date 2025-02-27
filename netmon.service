@@ -1,0 +1,13 @@
+[Unit]
+Description=Net Monitor - Serviço para monitoramento do status da conectividade à Internet da interface de rede wlan0 (Wi-Fi)
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/netmon.sh
+Restart=always
+User=root
+StandardOutput=append:/var/log/netmon/netmon.log
+StandardError=append:/var/log/netmon/netmon_error.log
+
+[Install]
+WantedBy=multi-user.target
