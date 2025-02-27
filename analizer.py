@@ -6,12 +6,6 @@ import shutil
 import re
 import os
 
-# Cria um diretório raiz para armazenar os gráficos
-base_dir = "Graficos"
-
-# Estrutura de diretórios
-folders = ["Histogramas", "Graficos_de_Dispersao", "Graficos_de_Variacao_no_Tempo", "Boxplot", "Correlacao_Signal_RTT", "Media_RTT_por_Hora"]
-
 # Inicializa o DataFrame vazio
 df = pd.DataFrame()  
 
@@ -133,123 +127,6 @@ def extract_data():
         print("Nenhum dado foi encontrado no arquivo de log.")
         return pd.DataFrame()
 
-def boxplot_graph(action):
-    """Gera um boxplot comparativo das métricas de RTT.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
-
-    global df
-
-    # Cria um gráfico de boxplot comparativo
-    plt.figure(figsize=(10, 6))
-    plt.boxplot([df[column] for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev']], 
-                vert=True, patch_artist=True, labels=['RTT Min', 'RTT Med', 'RTT Max', 'RTT Dev'])
-
-    # Configurando títulos e rótulos
-    plt.title('Boxplot Comparativo de RTT', fontsize=16)
-    plt.ylabel('Valores', fontsize=14)
-    plt.xlabel('Métricas', fontsize=14)
-    plt.grid(True)
-
-    # verifica se deve salvar ou exibir o gráfico
-    if action == "save":
-        plt.savefig(f'{base_dir}/Boxplot/rtt_boxplot.png')
-        plt.close()
-    else:
-        plt.show()
-
-def histogram_graph(action):
-    """Gera histogramas para cada métrica de RTT, sinal e perda de pacotes.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
-    
-    global df
-
-    # Cria histogramas para cada métrica
-    for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev', 'signal', 'packet_loss']:
-        plt.figure(figsize=(12, 6))
-        plt.hist(df[column], bins=10, color='blue', alpha=0.7, edgecolor='black')
-
-        # Configurando títulos e rótulos
-        plt.title(f'Distribuição do {labels[column]}', fontsize=16)
-        plt.xlabel(labels[column], fontsize=14)
-        plt.ylabel('Frequência', fontsize=14)
-
-        # Verifica se deve salvar ou exibir o gráfico
-        if action == "save":
-            plt.savefig(f'{base_dir}/Histogramas/{column}_histogram.png')
-            plt.close()
-        else:
-            plt.show()
-
-def time_series_graph(action):
-    """Gera um gráfico de variação no tempo para cada métrica de RTT, sinal e perda de pacotes.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
-
-    global df
-
-    # Cria gráficos de variação no tempo para cada métrica
-    for column in ['signal', 'rtt_min', 'rtt_max', 'rtt_med', 'rtt_dev', 'packet_loss']:
-
-        plt.figure(figsize=(12, 6))
-        plt.plot(df["timestamp"], df[column])
-        plt.title(f'Gráfico de variação no tempo do {labels[column]}')
-        plt.xlabel("Tempo")
-        plt.ylabel(labels[column])
-
-        # Rotaciona os rótulos do eixo X para melhor leitura
-        plt.xticks(rotation=45)
-
-        # Verifica se deve salvar ou exibir o gráfico
-        if action == "save":
-            plt.savefig(f'{base_dir}/Graficos_de_Variacao_no_Tempo/{column}_time_series.png')
-            plt.close()
-        else:
-            plt.show()
-
-def dispertion_graph(action):
-    """Gerar gráficos de dispersão para cada métrica de RTT, sinal e perda de pacotes.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
-
-    # Cria gráficos de dispersão para cada métrica
-    for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev', 'signal', 'packet_loss']:
-        # Plotando o gráfico de dispersão
-        plt.figure(figsize=(12, 6))
-
-        plt.scatter(df['timestamp'], df[column], label=column, color='blue', alpha=0.7)
-
-        # Configurando título e rótulos
-        plt.title(f'Gráficod e dispersão do {labels[column]}', fontsize=16)
-        plt.xlabel('Timestamp', fontsize=14)
-        plt.ylabel(labels[column], fontsize=14)
-
-        # Rotacionando os rótulos do eixo X para melhor leitura
-        plt.xticks(rotation=45)
-
-        # Adicionando legenda
-        plt.legend(fontsize=12)
-
-        # Exibindo o gráfico
-        plt.grid(True, linestyle='--', alpha=0.5)
-        plt.tight_layout()
-
-        # Verifica se deve salvar ou exibir o gráfico
-        if action == "save":
-            plt.savefig(f'{base_dir}/Graficos_de_Dispersao/{column}_dispertion.png')
-            plt.close()
-        else:
-            plt.show()
-
 def stats():
     """Exibe estatísticas descritivas do data frame.
     """
@@ -257,38 +134,8 @@ def stats():
     print("Caracterização do data frame:")
     print(df.describe())
 
-def export_graphs():
-    """Exporta os gráficos gerados para um arquivo ZIP.
-    """
-
-    # Cria os diretórios
-    for folder in folders:
-        os.makedirs(os.path.join(base_dir, folder), exist_ok=True)
-    
-    # Gerar os gráficos
-    time_series_graph("save")
-    histogram_graph("save")
-    boxplot_graph("save")
-    dispertion_graph("save")
-    corr_rtt_signal("save")
-    rtt_per_hour("save")
-
-    # Cria um arquivo ZIP contendo todos os gráficos
-    zip_filename = "Graficos.zip"
-    shutil.make_archive("Graficos", "zip", base_dir)
-
-    # Remover a pasta "Graficos" após criar o ZIP
-    shutil.rmtree("Graficos")
-
-    # Exibir mensagem de sucesso
-    print(f"Todos os gráficos foram salvos e compactados no arquivo \"{zip_filename}\".")
-
-def corr_rtt_signal(action):
-    """Gera gráficos de dispersão e calcula a correlação entre Signal e cada métrica de RTT.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
+def corr_rtt_signal():
+    """Gera gráficos de dispersão e calcula a correlação entre Signal e cada métrica de RTT."""
 
     global df
 
@@ -300,15 +147,7 @@ def corr_rtt_signal(action):
         plt.xlabel("Signal (%)", fontsize=12)
         plt.ylabel(f"{labels[column]}", fontsize=12)
         plt.grid(True)
-
-        # Verifica se deve salvar ou exibir o gráfico
-        if action == "save":
-            plt.savefig(f'{base_dir}/Correlacao_Signal_RTT/Correlacao_Signal_{column}.png')
-            plt.close()
-        else:
-            plt.show()
-
-    if action == "show":
+        plt.show()
 
         # Coeficiente de correlação entre Signal e cada métrica de RTT
         correlation_results = {}
@@ -336,12 +175,8 @@ def corr_rtt_signal(action):
 
             print(f"Signal vs {labels[column]}: {corr:.4f} (correlação {corr_type} {corr_strengh})")
 
-def rtt_per_hour(action):
-    """Gera um gráfico de linha da média de RTT por hora do dia.
-
-    Args:
-        action (string): Indica se o gráfico deve ser exibido ou salvo. ("show" ou "save")
-    """
+def rtt_per_hour():
+    """Gera um gráfico de linha da média de RTT por hora do dia."""
 
     global df
 
@@ -351,9 +186,8 @@ def rtt_per_hour(action):
     # Agrupar por hora e calcular a média de RTT
     hourly_rtt = df.groupby("hour")["rtt_med"].mean()
 
-    if action == "show":
-        print("Média de RTT por Hora do Dia:")
-        print(hourly_rtt) 
+    print("Média de RTT por Hora do Dia:")
+    print(hourly_rtt) 
 
     # Plotar o gráfico de latência média por hora
     plt.figure(figsize=(10, 6))
@@ -361,47 +195,7 @@ def rtt_per_hour(action):
     plt.xlabel("Hora do Dia")
     plt.ylabel("Média de RTT (ms)")
     plt.grid(True)
-
-    # Verifica se deve salvar ou exibir o gráfico  
-    if action == "save":
-        plt.savefig(f'{base_dir}/Media_RTT_por_Hora/Media_RTT_por_Hora.png')
-        plt.close()
-    else:
-        plt.show()
-
-def generate_graphs():
-    """Exibe um menu para o usuário escolher o tipo de gráfico a ser gerado.
-    """
-
-    global df
-    global labels
-
-    while True:
-        options = ["Gráficos de variação no tempo", "Histogramas", "Boxplot", "Gráficos de dispersão", "Sair"]
-        choice = inquirer.select(
-            message="Escolha uma opção:",
-            choices=options,
-        ).execute()
-
-        if choice == "Gráficos de variação no tempo":
-
-            time_series_graph("show")
-
-        elif choice == "Histogramas":
-
-            histogram_graph("show")
-
-        elif choice == "Boxplot":
-
-            boxplot_graph("show")
-        
-        elif choice == "Gráficos de dispersão":
-
-            dispertion_graph("show")
-
-        elif choice == "Sair":
-            print("Retornando ao menu principal...")
-            break
+    plt.show()
 
 def connection_quality():
     """Classifica a qualidade da conexão baseado nos valores médios de RTT, sinal e perda de pacotes."""
@@ -505,7 +299,7 @@ def menu():
     """
 
     global df
-    options = ["Extrair dados do log", "Exibir dados", "Gerar gráficos", "Correlação entre RTT e Sinal", "RTT por hora do dia", "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Exportar gráficos", "Sair"]
+    options = ["Extrair dados do log", "Exibir dados", "Correlação entre RTT e Sinal", "RTT por hora do dia", "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Sair"]
     choice = inquirer.select(
         message="Escolha uma opção:",
         choices=options,
@@ -519,12 +313,6 @@ def menu():
             print("Nenhum dado disponível. Extraia os dados primeiro.")
         else:
             print(df)
-
-    elif choice == "Gerar gráficos":
-        if df.empty:
-            print("Nenhum dado disponível. Extraia os dados primeiro.")
-        else:
-            generate_graphs()
 
     elif choice == "Estatísticas":
         if df.empty:
@@ -567,12 +355,6 @@ def menu():
             print("Nenhum dado disponível. Extraia os dados primeiro.")
         else:
             export_to_csv()
-
-    elif choice == "Exportar gráficos":
-        if df.empty:
-            print("Nenhum dado disponível. Extraia os dados primeiro.")
-        else:
-            export_graphs()
 
     elif choice == "Sair":
         print("Saindo do programa...")
