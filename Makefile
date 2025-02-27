@@ -20,7 +20,7 @@ install:
 
 	@echo "Criando arquivo de configuração..."
 	if [ ! -f $(CONFIG_FILE) ]; then \
-	    echo "MAX_LOSS=60" | sudo tee $(CONFIG_FILE) > /dev/null; \
+	    echo "MAX_LOSS=40" | sudo tee $(CONFIG_FILE) > /dev/null; \
 	    echo 'TARGETS=("8.8.8.8" "8.8.4.4" "1.1.1.1" "1.0.0.1")' | sudo tee -a $(CONFIG_FILE) > /dev/null; \
 	    echo "INTERVAL=60" | sudo tee -a $(CONFIG_FILE) > /dev/null; \
 	    echo "PING_COUNT=5" | sudo tee -a $(CONFIG_FILE) > /dev/null; \

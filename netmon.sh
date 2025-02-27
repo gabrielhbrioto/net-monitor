@@ -3,7 +3,7 @@
 CONFIG_FILE="/etc/netmon.conf"
 
 # Definir valores padrão caso o arquivo não exista
-MAX_LOSS=60
+MAX_LOSS=40
 TARGETS=("8.8.8.8" "8.8.4.4" "1.1.1.1" "1.0.0.1" "208.67.222.222" "208.67.220.220")
 INTERVAL=60
 PING_COUNT=5

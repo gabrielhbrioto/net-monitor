@@ -402,13 +402,110 @@ def generate_graphs():
         elif choice == "Sair":
             print("Retornando ao menu principal...")
             break
-        
+
+def connection_quality():
+    """Classifica a qualidade da conexão baseado nos valores médios de RTT, sinal e perda de pacotes."""
+    global df
+
+    if df.empty:
+        print("Nenhum dado disponível. Extraia os dados primeiro.")
+        return
+
+    avg_rtt = df["rtt_med"].mean()
+    avg_signal = df["signal"].mean()
+    avg_loss = df["packet_loss"].mean()
+
+    # Avaliação baseada em RTT
+    if avg_rtt < 50:
+        rtt_quality = "Ótima"
+    elif avg_rtt < 100:
+        rtt_quality = "Boa"
+    elif avg_rtt < 200:
+        rtt_quality = "Razoável"
+    else:
+        rtt_quality = "Ruim"
+
+    # Avaliação baseada no Sinal (%)
+    if avg_signal > 70:
+        signal_quality = "Ótimo"
+    elif avg_signal > 50:
+        signal_quality = "Bom"
+    elif avg_signal > 30:
+        signal_quality = "Fraco"
+    else:
+        signal_quality = "Muito Fraco"
+
+    # Avaliação baseada na Perda de Pacotes (%)
+    if avg_loss < 2:
+        loss_quality = "Baixa"
+    elif avg_loss < 5:
+        loss_quality = "Moderada"
+    else:
+        loss_quality = "Alta"
+
+    print("**Classificação da Qualidade da Conexão**")
+    print(f"RTT Médio: {avg_rtt:.2f} ms ({rtt_quality})")
+    print(f"Sinal Médio: {avg_signal:.2f}% ({signal_quality})")
+    print(f"Perda de Pacotes Média: {avg_loss:.2f}% ({loss_quality})")
+
+    # Mensagem geral sobre a conexão
+    if avg_rtt < 100 and avg_signal > 50 and avg_loss < 2:
+        print("Sua conexão está estável e com boa qualidade!")
+    elif avg_rtt > 200 or avg_signal < 30 or avg_loss > 5:
+        print("Sua conexão apresenta problemas! Verifique a rede Wi-Fi ou o provedor de internet.")
+    else:
+        print("Sua conexão está aceitável, mas pode apresentar instabilidades em determinados momentos.")
+
+def peak_instability_periods():
+    """Identifica os horários do dia onde ocorrem os maiores RTTs médios e maior perda de pacotes."""
+    global df
+
+    if df.empty:
+        print("Nenhum dado disponível. Extraia os dados primeiro.")
+        return
+
+    df["hour"] = df["timestamp"].dt.hour  # Extrai a hora do timestamp
+    high_rtt_hours = df.groupby("hour")["rtt_med"].mean().idxmax()
+    high_loss_hours = df.groupby("hour")["packet_loss"].mean().idxmax()
+
+    print("**Horários Críticos da Conexão**")
+    print(f"Maior RTT médio ocorre por volta das {high_rtt_hours}:00")
+    print(f"Maior perda de pacotes ocorre por volta das {high_loss_hours}:00")
+
+    if high_rtt_hours == high_loss_hours:
+        print(f"A maior instabilidade ocorre no horário das {high_rtt_hours}:00. Considere evitar esse período para atividades críticas.")
+    else:
+        print("A instabilidade pode variar ao longo do dia. Consulte os horários identificados para planejar melhor o uso da rede.")
+
+def recovery_time():
+    """Analisa o tempo médio necessário para a rede se recuperar após uma falha (alta perda de pacotes)."""
+    global df
+
+    if df.empty:
+        print("Nenhum dado disponível. Extraia os dados primeiro.")
+        return
+
+    threshold = int(input("Digite em % a perda de pacotes que considera uma falha na rede: "))
+    df["prev_loss"] = df["packet_loss"].shift(1)  # Adiciona uma coluna para comparar com a anterior
+    recovery_times = []
+
+    for i in range(1, len(df)):
+        if df.iloc[i - 1]["prev_loss"] >= threshold and df.iloc[i]["packet_loss"] < threshold:
+            recovery_time = (df.iloc[i]["timestamp"] - df.iloc[i - 1]["timestamp"]).total_seconds()
+            recovery_times.append(recovery_time)
+
+    if recovery_times:
+        avg_recovery_time = sum(recovery_times) / len(recovery_times)
+        print(f"Tempo médio para recuperação da rede após falha: {avg_recovery_time:.2f} segundos.")
+    else:
+        print("Nenhuma falha detectada no intervalo analisado.")
+
 def menu():
     """Exibe um menu principal para o usuário escolher as opções disponíveis.
     """
 
     global df
-    options = ["Extrair dados do log", "Exibir dados", "Gerar gráficos", "Correlação entre RTT e Sinal", "RTT por hora do dia", "Estatísticas", "Exportar dados para CSV", "Exportar gráficos", "Sair"]
+    options = ["Extrair dados do log", "Exibir dados", "Gerar gráficos", "Correlação entre RTT e Sinal", "RTT por hora do dia", "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Exportar gráficos", "Sair"]
     choice = inquirer.select(
         message="Escolha uma opção:",
         choices=options,
@@ -446,7 +543,25 @@ def menu():
             print("Nenhum dado disponível. Extraia os dados primeiro.")
         else:
             rtt_per_hour("show")
+            
+    elif choice == "Classificação da Qualidade da Conexão":
+        if df.empty:
+            print("Nenhum dado disponível. Extraia os dados primeiro.")
+        else:
+            connection_quality()
 
+    elif choice == "Horários Críticos da Conexão":
+        if df.empty:
+            print("Nenhum dado disponível. Extraia os dados primeiro.")
+        else:
+            peak_instability_periods()
+
+    elif choice == "Tempo Médio de Recuperação da Rede":
+        if df.empty:
+            print("Nenhum dado disponível. Extraia os dados primeiro.")
+        else:
+            recovery_time()
+    
     elif choice == "Exportar dados para CSV":
         if df.empty:
             print("Nenhum dado disponível. Extraia os dados primeiro.")
