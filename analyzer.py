@@ -1,5 +1,8 @@
 import pandas as pd
+import matplotlib
+matplotlib.use("TkAgg")  # Usa TkAgg como backend
 import matplotlib.pyplot as plt
+
 from datetime import datetime
 from InquirerPy import inquirer
 import shutil
@@ -85,14 +88,15 @@ def extract_data():
     data = []
 
     log_pattern = re.compile(
-        r"^(?P<timestamp>\S+ \S+) - network=(?P<network>\S+|None)\s+"
-        r"signal=(?P<signal>\d+) %\s+"
-        r"packet-loss=(?P<packet_loss>\d+) %\s+"
-        r"rtt-min=(?P<rtt_min>[\d\.]+|null) ms\s+"
-        r"rtt-med=(?P<rtt_med>[\d\.]+|null) ms\s+"
-        r"rtt-max=(?P<rtt_max>[\d\.]+|null) ms\s+"
-        r"rtt-dev=(?P<rtt_dev>[\d\.]+|null) ms$"
+        r"^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - network=(?P<network>[^\s]+|None)\s+"
+        r"signal=(?P<signal>\d+)%\s+"
+        r"packet-loss=(?P<packet_loss>\d+)%\s+"
+        r"rtt-min=(?P<rtt_min>[\d\.]+|null)\s+ms\s+"
+        r"rtt-med=(?P<rtt_med>[\d\.]+|null)\s+ms\s+"
+        r"rtt-max=(?P<rtt_max>[\d\.]+|null)\s+ms\s+"
+        r"rtt-dev=(?P<rtt_dev>[\d\.]+|null)\s+ms"
     )
+
     
     # Lendo o arquivo de log e extraindo os dados dentro do intervalo
     with open(log_file_path, 'r') as log_file:
@@ -144,26 +148,49 @@ def corr_rtt_signal():
     """Gera gráficos de dispersão e calcula a correlação entre Signal e cada métrica de RTT."""
 
     global df
+
+    # Escolher se a análise será geral ou separada por rede
     if analyze_by_network == "Análise geral (todas as redes)":
         dataset = {"Geral": df}  # Criamos um dicionário para facilitar a iteração
     else:
         dataset = {ssid: group for ssid, group in df.groupby("network")}
 
+    # Itera sobre os conjuntos de dados (geral ou por rede)
     for name, group in dataset.items():
         print(f"Rede: {name}")
 
+        # Gráfico de dispersão entre Signal e cada métrica de RTT
         for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev']:
             plt.figure(figsize=(8, 6))
             plt.scatter(group["signal"], group[column], alpha=0.7, edgecolor="k")
-            plt.title(f"{name} - Relação entre Sinal (%) e {labels[column]}", fontsize=16)
+            plt.title(f"{name} - Relação entre Signal (%) e {labels[column]}", fontsize=16)
             plt.xlabel("Signal (%)", fontsize=12)
             plt.ylabel(f"{labels[column]}", fontsize=12)
             plt.grid(True)
             plt.show()
 
-            # Coeficiente de correlação
-            correlation = group["signal"].corr(group[column])
-            print(f"Correlação entre Sinal e {labels[column]} ({name}): {correlation:.4f}")
+        # Coeficiente de correlação entre Signal e cada métrica de RTT
+        correlation_results = {}
+        for column in ['rtt_min', 'rtt_med', 'rtt_max', 'rtt_dev']:
+            correlation = group["signal"].corr(group[column])  # Correlação de Pearson
+            correlation_results[column] = correlation
+
+        # Exibir resultados de correlação
+        print("Coeficientes de Correlação entre Signal e Métricas de RTT:")
+        for column, corr in correlation_results.items():
+            corr_type = "positiva" if corr > 0 else "negativa"
+
+            # Classifica a força da correlação
+            if abs(corr) >= 0.7:
+                corr_strength = "muito forte"
+            elif abs(corr) >= 0.5:
+                corr_strength = "moderada"
+            elif abs(corr) >= 0.3:
+                corr_strength = "fraca"
+            else:
+                corr_strength = "muito fraca"
+
+            print(f"Signal vs {labels[column]}: {corr:.4f} (correlação {corr_type} {corr_strength})")
 
 def rtt_per_hour():
     """Gera um gráfico de linha da média de RTT por hora do dia."""
@@ -266,12 +293,6 @@ def menu():
     global df
     global analyze_by_network
 
-    # Pergunta ao usuário se deseja analisar todas as redes juntas ou separadamente
-    analyze_by_network = inquirer.select(
-        message="Como deseja realizar a análise?",
-        choices=["Análise geral (todas as redes)", "Análise separada por rede"],
-    ).execute()
-
     options = ["Extrair dados do log", "Exibir dados", "Correlação entre RTT e Sinal", "RTT por hora do dia", 
                "Estatísticas", "Classificação da Qualidade da Conexão", "Horários Críticos da Conexão", 
                "Tempo Médio de Recuperação da Rede", "Exportar dados para CSV", "Sair"]
@@ -336,9 +357,19 @@ def menu():
         print("Saindo do programa...")
         os._exit(0)
 
-while True:
-    menu()
 
 
-while True:
-    menu()
+
+def main():
+    
+    # Pergunta ao usuário se deseja analisar todas as redes juntas ou separadamente
+    analyze_by_network = inquirer.select(
+        message="Como deseja realizar a análise?",
+        choices=["Análise geral (todas as redes)", "Análise separada por rede"],
+    ).execute()
+
+    while True:
+        menu()
+
+if __name__ == "__main__":
+    main()

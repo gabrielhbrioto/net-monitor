@@ -11,9 +11,9 @@ case "$1" in
         ;;
     status)
         if systemctl is-active --quiet netmon.service; then
-            echo "Net Monitor \033[32mativo\033[0m"
+            echo "Net Monitor ativo"
         else
-            echo "Net Monitor \033[31minativo\033[0m"
+            echo "Net Monitor inativo"
         fi
         ;;
     analyze)
@@ -58,6 +58,13 @@ case "$1" in
         echo "  config         - Altera as configurações de monitoramento"
         echo "  set-interface  - Define manualmente a interface Wi-Fi a ser usada"
         echo "  help           - Exibe esta mensagem de ajuda"
+        echo ""
+        echo "Variáveis de configuração:"
+        echo "  MAX_LOSS   - Número máximo de pacotes perdidos para considerar a conexão ruim"
+        echo "  TARGETS    - Endereços-alvo para os testes de ping"
+        echo "  INTERVAL   - Intervalo entre os testes de ping (em segundos)"
+        echo "  PING_COUNT - Número de pacotes a serem enviados em cada teste de ping"
+        echo "  IFACE      - Interface de rede Wi-Fi a ser monitorada"
         ;;
     *)
         echo "Uso: netmon help para ver os comandos disponíveis"

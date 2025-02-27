@@ -17,7 +17,7 @@ fi
 # Detectando automaticamente a interface Wi-Fi, a menos que já tenha sido configurada manualmente
 detect_wifi_interface() {
     if [[ -n "$IFACE" ]]; then
-        echo "Usando interface Wi-Fi configurada manualmente: $IFACE"
+        logger -t netmon "Usando interface Wi-Fi configurada manualmente: $IFACE"
         return
     fi
 
@@ -26,10 +26,10 @@ detect_wifi_interface() {
         IFACE=$(nmcli device status | awk '$2=="wifi" {print $1}')
     fi
     if [[ -z "$IFACE" ]]; then
-        echo "Erro: Nenhuma interface Wi-Fi detectada! Configure manualmente com 'netmon set-interface <interface>'." >&2
+        logger -t netmon "Erro: Nenhuma interface Wi-Fi detectada! Configure manualmente com 'netmon set-interface <interface>'."
         exit 1
     fi
-    echo "Interface Wi-Fi detectada: $IFACE"
+    logger -t netmon "Interface Wi-Fi detectada: $IFACE"
 }
 
 detect_wifi_interface
@@ -43,21 +43,21 @@ log_message() {
 check_connectivity() {
     for TARGET in "${TARGETS[@]}"; do
         PING_OUTPUT=$(ping -c $PING_COUNT -W $PING_COUNT "$TARGET" 2>&1)
-        LOSS=$(echo "$PING_OUTPUT" | grep -oP '\d+(?=% perda de pacote)|A rede está fora de alcance')
+        LOSS=$(echo "$PING_OUTPUT" | grep -oP '\d+(?=% packet loss)|A rede está fora de alcance')
 
         if [[ $LOSS == "A rede está fora de alcance" ]]; then
             log_message "network=None signal=0% packet-loss=100% rtt-min=null ms rtt-med=null ms rtt-max=null ms rtt-dev=null ms"
             return 1
         fi
 
-        RTT=$(echo "$PING_OUTPUT" | grep -oP 'rtt mín/méd/máx/mdev = [\d\.]+/[\d\.]+/[\d\.]+/[\d\.]+ ms')
+        RTT=$(echo "$PING_OUTPUT" | grep -oP 'rtt min/avg/max/mdev = [\d\.]+/[\d\.]+/[\d\.]+/[\d\.]+ ms')
 
         if [[ -n "$RTT" ]]; then
             RTT_VALUES=$(echo "$RTT" | awk -F' = ' '{print $2}')
             MIN=$(echo "$RTT_VALUES" | awk -F'/' '{print $1}')
             MED=$(echo "$RTT_VALUES" | awk -F'/' '{print $2}')
             MAX=$(echo "$RTT_VALUES" | awk -F'/' '{print $3}')
-            MDEV=$(echo "$RTT_VALUES" | awk -F'/' '{print $4}')
+            MDEV=$(echo "$RTT_VALUES" | awk -F'/' '{print $4}' | sed 's/ ms$//')
         fi
 
         if [ "$LOSS" -lt "$MAX_LOSS" ]; then

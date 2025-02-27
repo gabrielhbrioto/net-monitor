@@ -3,7 +3,7 @@ Description=Net Monitor - Serviço para monitoramento do status da conectividade
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/netmon.sh
+ExecStart=/usr/local/share/netmon/netmon.sh
 Restart=always
 User=root
 StandardOutput=append:/var/log/netmon/netmon.log
