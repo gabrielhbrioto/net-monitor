@@ -70,7 +70,9 @@ O script analyzer.py permite realizar diversas análises baseadas nos dados extr
 
 1️⃣ Correlação entre RTT e Sinal
 
-🔍 Descrição: Gera gráficos de dispersão e calcula a correlação entre o sinal da rede Wi-Fi (%) e os valores de RTT (rtt_min, rtt_med, rtt_max e rtt_dev).📈 Objetivo: Determinar se há uma relação entre a intensidade do sinal e a latência da conexão.💲 Saída:
+🔍 Descrição: Gera gráficos de dispersão e calcula a correlação entre o sinal da rede Wi-Fi (%) e os valores de RTT (rtt_min, rtt_med, rtt_max e rtt_dev).
+📈 Objetivo: Determinar se há uma relação entre a intensidade do sinal e a latência da conexão.
+💲 Saída:
 
 - Gráfico de dispersão para cada métrica de RTT
 
@@ -80,13 +82,17 @@ O script analyzer.py permite realizar diversas análises baseadas nos dados extr
 
 2️⃣ RTT por Hora do Dia
 
-⏳ Descrição: Analisa a variação do tempo de resposta (rtt_med) ao longo do dia.📈 Objetivo: Identificar horários em que a rede apresenta maior ou menor latência.💲 Saída:
+⏳ Descrição: Analisa a variação do tempo de resposta (rtt_med) ao longo do dia.
+📈 Objetivo: Identificar horários em que a rede apresenta maior ou menor latência.
+💲 Saída:
 
 - Gráfico de linha exibindo a média do RTT por hora do dia
 
 3️⃣ Classificação da Qualidade da Conexão
 
-✅ Descrição: Avalia a qualidade da conexão com base nos valores médios de RTT, sinal e perda de pacotes.📈 Objetivo: Fornecer um diagnóstico simples sobre a estabilidade e desempenho da rede.💲 Saída:
+✅ Descrição: Avalia a qualidade da conexão com base nos valores médios de RTT, sinal e perda de pacotes.
+📈 Objetivo: Fornecer um diagnóstico simples sobre a estabilidade e desempenho da rede.
+💲 Saída:
 
 - Valores médios de RTT, sinal e perda de pacotes
 
@@ -94,7 +100,9 @@ O script analyzer.py permite realizar diversas análises baseadas nos dados extr
 
 4️⃣ Horários Críticos da Conexão
 
-🚨 Descrição: Identifica os períodos do dia com maior instabilidade, baseando-se nos valores mais altos de rtt_med e packet_loss.📈 Objetivo: Descobrir horários em que a rede apresenta mais problemas.💲 Saída:
+🚨 Descrição: Identifica os períodos do dia com maior instabilidade, baseando-se nos valores mais altos de rtt_med e packet_loss.
+📈 Objetivo: Descobrir horários em que a rede apresenta mais problemas.
+💲 Saída:
 
 - Horário do dia com maior RTT médio
 
@@ -104,13 +112,17 @@ O script analyzer.py permite realizar diversas análises baseadas nos dados extr
 
 5️⃣ Tempo Médio de Recuperação da Rede
 
-🔄 Descrição: Mede quanto tempo a rede leva para se recuperar após um evento de alta perda de pacotes (>20%).📈 Objetivo: Identificar a eficiência da recuperação da rede após problemas de conectividade.💲 Saída:
+🔄 Descrição: Mede quanto tempo a rede leva para se recuperar após um evento de alta perda de pacotes (>20%).
+📈 Objetivo: Identificar a eficiência da recuperação da rede após problemas de conectividade.
+💲 Saída:
 
 - Tempo médio para recuperação após falha
 
 6️⃣ Exportação de Dados para CSV
 
-📂 Descrição: Permite exportar os dados extraídos para um arquivo CSV, facilitando a análise externa.📈 Objetivo: Armazenar ou processar os dados fora do script analyzer.py.💲 Saída:
+📂 Descrição: Permite exportar os dados extraídos para um arquivo CSV, facilitando a análise externa.
+📈 Objetivo: Armazenar ou processar os dados fora do script analyzer.py.
+💲 Saída:
 
 - Arquivo .csv contendo os dados extraídos do log
 

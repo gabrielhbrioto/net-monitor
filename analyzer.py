@@ -132,15 +132,19 @@ def extract_data():
         return pd.DataFrame()
 
 def stats():
-    """Exibe estatísticas descritivas do data frame."""
+    """Exibe estatísticas descritivas do DataFrame."""
 
     global df
+    global analyze_by_network  # Assegurar acesso à variável global
+
     if analyze_by_network == "Análise geral (todas as redes)":
         print("Caracterização geral dos dados:")
         print(df.describe())
-
     else:
         for ssid, group in df.groupby("network"):
+            if group.empty:
+                print(f"Sem dados disponíveis para a rede: {ssid}")
+                continue
             print(f"Estatísticas da rede: {ssid}")
             print(group.describe())
 
@@ -148,6 +152,7 @@ def corr_rtt_signal():
     """Gera gráficos de dispersão e calcula a correlação entre Signal e cada métrica de RTT."""
 
     global df
+    global analyze_by_network
 
     # Escolher se a análise será geral ou separada por rede
     if analyze_by_network == "Análise geral (todas as redes)":
@@ -196,6 +201,8 @@ def rtt_per_hour():
     """Gera um gráfico de linha da média de RTT por hora do dia."""
 
     global df
+    global analyze_by_network
+
     df["hour"] = df["timestamp"].dt.hour
 
     if analyze_by_network == "Análise geral (todas as redes)":
@@ -219,6 +226,7 @@ def rtt_per_hour():
 def connection_quality():
     """Classifica a qualidade da conexão baseado nos valores médios de RTT, sinal e perda de pacotes."""
     global df
+    global analyze_by_network
 
     if analyze_by_network == "Análise geral (todas as redes)":
         dataset = {"Geral": df}
@@ -238,7 +246,9 @@ def connection_quality():
 
 def peak_instability_periods():
     """Identifica os horários do dia onde ocorrem os maiores RTTs médios e maior perda de pacotes."""
+
     global df
+    global analyze_by_network
 
     df["hour"] = df["timestamp"].dt.hour  # Extrai a hora do timestamp
 
@@ -262,7 +272,9 @@ def peak_instability_periods():
 
 def recovery_time():
     """Analisa o tempo médio necessário para a rede se recuperar após uma falha (alta perda de pacotes)."""
+    
     global df
+    global analyze_by_network
 
     threshold = 20  # Limite de perda de pacotes considerada alta
 
@@ -362,6 +374,8 @@ def menu():
 
 def main():
     
+    global analyze_by_network
+
     # Pergunta ao usuário se deseja analisar todas as redes juntas ou separadamente
     analyze_by_network = inquirer.select(
         message="Como deseja realizar a análise?",
