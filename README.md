@@ -2,6 +2,8 @@
 
 Net Monitor é uma ferramenta para monitoramento da conectividade da rede Wi-Fi, registrando perdas de pacotes, tempo de resposta (RTT) e intensidade do sinal. Além disso, fornece análises detalhadas sobre a estabilidade da rede ao longo do tempo, permitindo analisar os dados para detectar padrões de instabilidade, correlacionar RTT com sinal e identificar periódos críticos na qualidade da conexão.
 
+![Net Monitor Logo](assets/netmon_logo.png)
+
 ## ⚡ Recursos
 
 - 📡 **Monitoramento contínuo da conexão Wi-Fi**: Mede qualidade da conexão em intervalos regulares.
@@ -156,7 +158,9 @@ Isso removerá todos os arquivos, logs e configurações.
 ├── netmon.sh           # Script principal do monitor
 ├── analyzer.py         # Script de análise de dados
 ├── netmon.service      # Configuração do systemd
-└── README.md           # Documentação
+├── README.md           # Documentação
+└── /assets
+    └── netmon_logo.png # Logo do Net Monitor
 ```
 
 ---
